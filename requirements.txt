@@ -1,0 +1,11 @@
+certifi==2019.3.9
+chardet==3.0.4
+idna==2.8
+logzero==1.5.0
+prettytable==0.7.2
+python-irodsclient==0.8.1
+requests==2.21.0
+six==1.12.0
+tinydb==3.13.0
+urllib3==1.24.3
+xmlrunner==1.7.7

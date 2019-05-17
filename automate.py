@@ -13,7 +13,6 @@ import auth
 from tinydb import TinyDB, Query
 
 
-
 try:
     db = TinyDB('db.json')
     # Setup rotating logfile with 3 rotations, each with a maximum filesize of 1MB:
@@ -28,6 +27,14 @@ except Exception as e:
     logger.exception(e)
     logger.error("could not setup so we are exiting")
     exit(-1)
+
+def load_plugin(name):
+    mod = __import__("%s" % name)
+    return mod
+
+def call_plugin(name, *args, **kwargs):
+    plugin = load_plugin(name)
+    plugin.plugin_main(*args, **kwargs)
 
 
 def main():
@@ -70,9 +77,8 @@ def main():
             logger.info("Skipping " + obj.name + " because it's already been submitted")
             continue
 
-        if (ftype == "qmg"):
-            logger.info("Launching Quaternion Classifier Job for " + obj.name)
-            terrainQuaternionClassifier(obj)
+        v = dict(obj=obj, db=db, auth_headers=auth_headers, logger=logger)
+        call_plugin(ftype, v)
 
 def updateRunningData(result):
     '''
@@ -82,13 +88,14 @@ def updateRunningData(result):
     for x in result:
         try:
             logger.debug(x['id'])
-            r = requests.get("https://de.cyverse.org/terrain/analyses/{0}/history".format(x['id']), headers=auth_headers)
+            r = requests.get("https://de.cyverse.org/terrain/analyses/{0}/history"
+                             .format(x['id']), headers=auth_headers)
             r.raise_for_status()
             logger.debug(r.json())
 
             newStatus = (r.json()['steps'][0]['status'])
             entry = Query()
-            db.update({'status':newStatus}, entry.name==x['name'])
+            db.update({'status': newStatus}, entry.name == x['name'])
         except Exception as e:
             logger.exception(e)
 
@@ -109,68 +116,19 @@ def moveCompletedData(result):
                 logger.error("Ran into a custom irods exception when trying to move a file, probably a permissions issue")
             else:
                 logger.exception(e)
-
-def terrainQuaternionClassifier(obj):
-    '''
-    Runs the QuaternionClassifier Cyvere app with the input of the irods object obj
-    '''
-
-    try:
-        query_params = {"search": "Quaternion Classifier (Verssa)"}
-        r = requests.get("https://de.cyverse.org/terrain/apps", headers=auth_headers, params=query_params)
-        r.raise_for_status()
-        app_listing = r.json()["apps"][0]
-        system_id = app_listing["system_id"]
-        app_id = app_listing["id"]
-        logger.debug("System ID: " +  system_id)
-        logger.debug("App ID: " + app_id)
-
-        url = "https://de.cyverse.org/terrain/apps/{0}/{1}".format(system_id, app_id)
-        r = requests.get(url, headers=auth_headers)
-        r.raise_for_status()
-
-        parameter_id = r.json()["groups"][0]["parameters"][0]["id"]
-        logger.debug("Parameter ID: "+ parameter_id)
-
-        request_body = {
-            "config": {
-                parameter_id: obj.path
-            },
-            "name": "QuaternionClassifierAutomation",
-            "app_id": app_id,
-            "system_id": system_id,
-            "debug": False,
-            "output_dir": "/iplant/home/shared/ssa-arizona/demo/analyses",
-            "notify": True
-        }
-
-        r = requests.post("https://de.cyverse.org/terrain/analyses", headers=auth_headers, json=request_body)
-        r.raise_for_status()
-
-        rj = r.json()
-
-        newEntry = {
-            'status' : rj["status"],
-            'id' : rj["id"],
-            'name' : obj.path
-        }
-        db.insert(newEntry)
-        logger.info("added new entry with name " + newEntry['name'])
-    except Exception as e:
-            logger.exception(e)
-
-
+ 
 
 def prog_lock_acq(lpath):
-  fd = None
-  try:
-    fd = os.open(lpath, os.O_CREAT)
-    fcntl.flock(fd, fcntl.LOCK_NB | fcntl.LOCK_EX)
-    return True
-  except (OSError, IOError):
-    if fd: os.close(fd)
-    return False
+    fd = None
+    try:
+        fd = os.open(lpath, os.O_CREAT)
+        fcntl.flock(fd, fcntl.LOCK_NB | fcntl.LOCK_EX)
+        return True
+    except (OSError, IOError):
+        if fd:
+            os.close(fd)
+        return False
 
 
 if __name__ == '__main__':
-  main()
+    main()
