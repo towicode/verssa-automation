@@ -18,9 +18,9 @@ pip install requirements.txt
 python automate.py
 ```
 ## Adding modules
-Modules need to be named after their corosponding file-type. For example: Data.qmg -> qmg.py.
+Modules need to be named after their corresponding file-type. For example: Data.qmg -> qmg.py.
 
-For an example of how a module please see qmg.py and automation.py
+For an example of how a module works please see qmg.py and automation.py.
 
 Each module is passed the following via args: 
 1. obj -> the IRODs object
