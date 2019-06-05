@@ -18,7 +18,8 @@ try:
     # Setup rotating logfile with 3 rotations, each with a maximum filesize of 1MB:
     logzero.logfile("verssa-automation.log", maxBytes=1e6, backupCount=3)
     logzero.loglevel(logging.INFO)
-    session = iRODSSession(host='data.cyverse.org', port=1247, user=auth.username, password=auth.password, zone='iplant')
+    session = iRODSSession(host='data.cyverse.org', port=1247, user=auth.username,
+                           password=auth.password, zone='iplant')
     r = requests.get("https://de.cyverse.org/terrain/token", auth=(auth.username, auth.password))
     r.raise_for_status()
     token = r.json()['access_token']
@@ -43,7 +44,7 @@ def main():
 
     Specifically this function ensures that it isn't already running
     via the lock function. It also updates statuses on previously run projects.
-    Next it moves competed projects. Finally it looks for new data files to 
+    Next it moves competed projects. Finally it looks for new data files to
     run projects on
     '''
 
@@ -113,12 +114,16 @@ def moveCompletedData(result):
             logger.info("We moved " + x['name'] + " into the completed directory.")
         except Exception as e:
             if "irods.exception" in (str(type(e))):
-                logger.error("Ran into a custom irods exception when trying to move a file, probably a permissions issue")
+                logger.error("Ran into a custom irods exception when trying to move a file,"
+                             " probably a permissions issue")
             else:
                 logger.exception(e)
- 
 
 def prog_lock_acq(lpath):
+    '''
+    locking function
+    '''
+
     fd = None
     try:
         fd = os.open(lpath, os.O_CREAT)
