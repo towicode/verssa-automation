@@ -14,10 +14,14 @@ from tinydb import TinyDB, Query
 
 
 try:
+
+    if (auth.password == "fix_me"):
+        logger.error("you didn't update the password in auth.py")
+        exit(1)
     db = TinyDB('db.json')
     # Setup rotating logfile with 3 rotations, each with a maximum filesize of 1MB:
     logzero.logfile("verssa-automation.log", maxBytes=1e6, backupCount=3)
-    logzero.loglevel(logging.INFO)
+    logzero.loglevel(logging.DEBUG)
     session = iRODSSession(host='data.cyverse.org', port=1247, user=auth.username,
                            password=auth.password, zone='iplant')
     r = requests.get("https://de.cyverse.org/terrain/token", auth=(auth.username, auth.password))
@@ -60,6 +64,10 @@ def main():
     result = db.search(entry.status == "Completed")
     if (len(result) > 0):
         moveCompletedData(result)
+    
+    result = db.search(entry.status == "Failed")
+    if (len(result) > 0):
+        moveFailedData(result)
 
     if session is None:
         logger.error("There was an error creating the cyverse session")
@@ -112,6 +120,24 @@ def moveCompletedData(result):
             entry = Query()
             db.remove(entry.name == x['name'])
             logger.info("We moved " + x['name'] + " into the completed directory.")
+        except Exception as e:
+            if "irods.exception" in (str(type(e))):
+                logger.error("Ran into a custom irods exception when trying to move a file,"
+                             " probably a permissions issue")
+            else:
+                logger.exception(e)
+
+def moveFailedData(result):
+    '''
+    Takes a list of completed apps and attempts to move their data file
+    '''
+
+    for x in result:
+        try:
+            session.data_objects.move(x['name'], '/iplant/home/shared/ssa-arizona/demo/failed')
+            entry = Query()
+            db.remove(entry.name == x['name'])
+            logger.info("We moved " + x['name'] + " into the failed directory.")
         except Exception as e:
             if "irods.exception" in (str(type(e))):
                 logger.error("Ran into a custom irods exception when trying to move a file,"
