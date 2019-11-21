@@ -5,6 +5,8 @@ from irods.session import iRODSSession
 import logzero
 from logzero import logger
 import auth
+import logging
+
 
 
 def prog_lock_acq(lpath):
