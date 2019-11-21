@@ -52,12 +52,8 @@ if not prog_lock_acq('singleton.lock'):
     logger.error("There was another instance running")
     exit(-1)
 
-if ("FIX ME" in password):
-    logger.error("Make sure to set the password!")
-    exit(-1)
 
-
-with iRODSSession(host='data.cyverse.org', port=1247, user=username, password=password, zone='iplant') as session:
+with iRODSSession(host='data.cyverse.org', port=1247, user=auth.username, password=auth.password, zone='iplant') as session:
     coll = session.collections.get("/iplant/home/shared/phantom_echoes/phantom_echoes_MEV1")
     for col in coll.subcollections:
 

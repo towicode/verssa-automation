@@ -4,6 +4,8 @@ This script will automatically run CyVerse apps based on files uploaded to the /
 
 Currently a number of paths and components are hard-coded inside of automation.py, so please be aware if you are forking for your own purposes.
 
+Also included in this directory is the validation script. This validation script handles all subdirectories of the phantom_echoes_MEV1 folder and assigns meta-data upon validation. The validation script does not support modules
+
 ## Installation
 
 Use the package manager [pip](https://pip.pypa.io/en/stable/) to install the requirements.
@@ -16,6 +18,10 @@ pip install requirements.txt
 
 ```bash
 python automate.py
+```
+
+```bash
+python validation.py
 ```
 ## Adding modules
 Modules need to be named after their corresponding file-type. For example: Data.qmg -> qmg.py.
