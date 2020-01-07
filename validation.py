@@ -78,6 +78,16 @@ with iRODSSession(host='data.cyverse.org', port=1247, user=auth.username, passwo
             if (len(vkeys) >= 1):
                 continue
 
+            name = obj.name
+
+
+            valid_file = False
+            if (name.endswith('.fit') or name.endswith('.fits')):
+                valid_file = True
+
+            if (not valid_file):
+                continue
+                
             piece_size = 26214400 # 4 KiB
             m_chk = False
             with open("tmpvalid.fit", "wb") as new_file:
