@@ -10,6 +10,9 @@ import os
 import fcntl
 import time
 
+from tendo import singleton
+
+
 
 
 
@@ -17,16 +20,7 @@ def prog_lock_acq(lpath):
     '''
     locking function
     '''
-
-    fd = None
-    try:
-        fd = os.open(lpath, os.O_CREAT)
-        fcntl.flock(fd, fcntl.LOCK_NB | fcntl.LOCK_EX)
-        return True
-    except (OSError, IOError):
-        if fd:
-            os.close(fd)
-        return False
+    me = singleton.SingleInstance() # will sys.exit(-1) if other instance is running
 
 
 def fail_and_move(message, obj, session):
@@ -54,10 +48,7 @@ except Exception as e:
 
 
 #   We don't want multiple of this program running at once
-if not prog_lock_acq('singleton.lock'):
-    logger.error("There was another instance running")
-    exit(-1)
-
+prog_lock_acq('singleton.lock'):
 
 with iRODSSession(host='data.cyverse.org', port=1247, user=auth.username, password=auth.password, zone='iplant') as session:
     coll = session.collections.get("/iplant/home/shared/phantom_echoes/phantom_echoes_MEV1")
