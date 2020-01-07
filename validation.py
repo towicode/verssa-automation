@@ -8,6 +8,7 @@ import auth
 import logging
 import os
 import fcntl
+import time
 
 
 
@@ -78,19 +79,28 @@ with iRODSSession(host='data.cyverse.org', port=1247, user=auth.username, passwo
                 continue
 
             piece_size = 26214400 # 4 KiB
+            m_chk = False
             with open("tmpvalid.fit", "wb") as new_file:
                 with obj.open('r') as cache:
-                    while True:
+                    t_end = time.time() + 60 * 4
+                    while time.time() < t_end:
                         piece = cache.read(piece_size)
 
                         if piece == "":
+                            m_chk = True
                             break # end of file
 
                         if not piece:
+                            m_chk = True
                             break
                         
                         new_file.write(piece)
             
+
+            if (not m_chk):
+                logger.error("execution took too long exiting")
+                exit(-1)
+
             filename = obj.name
             tmp_filename = "tmpvalid.fit"
             hdul = fits.open(tmp_filename)
