@@ -48,7 +48,7 @@ except Exception as e:
 
 
 #   We don't want multiple of this program running at once
-prog_lock_acq('singleton.lock'):
+prog_lock_acq('singleton.lock')
 
 with iRODSSession(host='data.cyverse.org', port=1247, user=auth.username, password=auth.password, zone='iplant') as session:
     coll = session.collections.get("/iplant/home/shared/phantom_echoes/phantom_echoes_MEV1")
