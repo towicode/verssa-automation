@@ -25,6 +25,8 @@ def prog_lock_acq(lpath):
 
 def fail_and_move(message, obj, session):
 
+    os.system('echo "' + obj.name + '" has failed. '+ message + ' | mail -s "Failed to validate FITs file" -aFrom:NoReply\<noreply@henchard.cyverse.org\> ssa@dstl.gov.uk')
+
     # Create an error message
     err_obj = session.data_objects.create("/iplant/home/shared/phantom_echoes/phantom_echoes_MEV1/validation_failed/"+obj.name+".err")
     with err_obj.open('w') as f:
