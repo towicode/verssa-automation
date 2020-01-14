@@ -181,7 +181,7 @@ with iRODSSession(host='data.cyverse.org', port=1247, user=auth.username, passwo
 
             # Finally validate the meta-data
             obj.metadata.add('validated', 'true')
-            obj.metadata.add('COUTNRY', str(hdr['COUTNRY']))
+            obj.metadata.add('COUNTRY', str(hdr['COUNTRY']))
             obj.metadata.add('TELESCOP', str(hdr['TELESCOP']))
             obj.metadata.add('SITEELEV', str(hdr['SITEELEV']))
             obj.metadata.add('SITELONG', str(hdr['SITELONG']))
