@@ -14,7 +14,7 @@ from tendo import singleton
 
 
 
-
+error_list = []
 
 def prog_lock_acq(lpath):
     '''
@@ -22,11 +22,27 @@ def prog_lock_acq(lpath):
     '''
     me = singleton.SingleInstance() # will sys.exit(-1) if other instance is running
 
+def send_error_email():
+    '''
+    Sends an error email will all the errors
+    '''
+    recipient = "ssa@dstl.gov.uk"
+    sender = "-aFrom:NoReply\<noreply@henchard.cyverse.org\>"
+    subject = "Failed to validate FIT file(s)"
+    message = " There were a few issues with an effort to validate FITs files: \n\n"
+    for error in error_list:
+        message = message + error[0] + " has failed. " + error[1] + "\n"
+
+    os.system('echo -e "' + message + ' | mail -s "'+subject+'" '+sender+' '+recipient+' ')
+
+
+
+
 
 def fail_and_move(message, obj, session):
 
-    os.system('echo "' + obj.name + '" has failed. '+ message + ' | mail -s "Failed to validate FITs file" -aFrom:NoReply\<noreply@henchard.cyverse.org\> ssa@dstl.gov.uk')
-
+    # os.system('echo "' + obj.name + '" has failed. '+ message + ' | mail -s "Failed to validate FITs file" -aFrom:NoReply\<noreply@henchard.cyverse.org\> ssa@dstl.gov.uk')
+    error_list.append((obj.name, message))
     # Create an error message
     err_obj = session.data_objects.create("/iplant/home/shared/phantom_echoes/phantom_echoes_MEV1/validation_failed/"+obj.name+".err")
     with err_obj.open('w') as f:
@@ -190,6 +206,8 @@ with iRODSSession(host='data.cyverse.org', port=1247, user=auth.username, passwo
             obj.metadata.add('OBJCTRA', str(hdr['OBJCTRA']))
             obj.metadata.add('EXPTIME', str(hdr['EXPTIME']))
             obj.metadata.add('DATE-OBS', str(hdr['DATE-OBS']))
+
+send_error_email()
     
 
 
