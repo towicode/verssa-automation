@@ -30,6 +30,8 @@ def send_error_email():
     if len(error_list) <= 0:
         return
 
+    logger.debug("sending error email")
+
     recipient = "toddwickizer@gmail.com"
     #recipient = "ssa@dstl.gov.uk"
     sender = "-aFrom:NoReply\<noreply@henchard.cyverse.org\>"
@@ -72,6 +74,8 @@ except Exception as e:
 
 #   We don't want multiple of this program running at once
 prog_lock_acq('singleton.lock')
+
+logger.debug("Starting program")
 
 with iRODSSession(host='data.cyverse.org', port=1247, user=auth.username, password=auth.password, zone='iplant') as session:
     coll = session.collections.get("/iplant/home/shared/phantom_echoes/phantom_echoes_MEV1")
