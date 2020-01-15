@@ -26,14 +26,15 @@ def send_error_email():
     '''
     Sends an error email will all the errors
     '''
-    recipient = "ssa@dstl.gov.uk"
+    recipient = "toddwickizer@gmail.com"
+    #recipient = "ssa@dstl.gov.uk"
     sender = "-aFrom:NoReply\<noreply@henchard.cyverse.org\>"
     subject = "Failed to validate FIT file(s)"
     message = " There were a few issues with an effort to validate FITs files: \n\n"
     for error in error_list:
         message = message + error[0] + " has failed. " + error[1] + "\n"
 
-    os.system('echo -e "' + message + ' | mail -s "'+subject+'" '+sender+' '+recipient+' ')
+    os.system('echo -e "' + message + '" | mail -s "'+subject+'" '+sender+' '+recipient+' ')
 
 
 
