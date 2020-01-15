@@ -26,6 +26,10 @@ def send_error_email():
     '''
     Sends an error email will all the errors
     '''
+
+    if len(error_list) <= 0:
+        return
+
     recipient = "toddwickizer@gmail.com"
     #recipient = "ssa@dstl.gov.uk"
     sender = "-aFrom:NoReply\<noreply@henchard.cyverse.org\>"
@@ -34,7 +38,7 @@ def send_error_email():
     for error in error_list:
         message = message + error[0] + " has failed. " + error[1] + "\n"
 
-    os.system('echo -e "' + message + '" | mail -s "'+subject+'" '+sender+' '+recipient+' ')
+    os.system('echo "' + message + '" | mail -s "'+subject+'" '+sender+' '+recipient+' ')
 
 
 
