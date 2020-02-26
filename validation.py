@@ -1,5 +1,4 @@
 from astropy.io import fits
-import pprint
 import re
 from irods.session import iRODSSession
 import logzero
@@ -7,25 +6,21 @@ from logzero import logger
 import auth
 import logging
 import os
-import fcntl
 import time
 
 from tendo import singleton
 
 
-
 error_list = []
+t_end = time.time() + (60 * 4)
 
-def prog_lock_acq(lpath):
-    '''
-    locking function
-    '''
-    me = singleton.SingleInstance() # will sys.exit(-1) if other instance is running
 
 def send_error_email():
     '''
     Sends an error email will all the errors
     '''
+
+    time_check()
 
     if len(error_list) <= 0:
         return
@@ -40,13 +35,20 @@ def send_error_email():
     for error in error_list:
         message = message + error[0] + " has failed. " + error[1] + "\n"
 
-    os.system('echo "' + message + '" | mail -s "'+subject+'" '+sender+' '+recipient+' ')
+    m = 'echo "' + message + '" | mail -s "'+subject+'" '+sender+' '+recipient+' '
+    os.system(m)
 
 
+def time_check():
 
+    if (time.time() > t_end):
+        logger.debug("execution took longer than 5 minutes. Exiting")=
+        exit(-1)
 
 
 def fail_and_move(message, obj, session):
+
+    time_check()
 
     # os.system('echo "' + obj.name + '" has failed. '+ message + ' | mail -s "Failed to validate FITs file" -aFrom:NoReply\<noreply@henchard.cyverse.org\> ssa@dstl.gov.uk')
     error_list.append((obj.name, message))
@@ -57,10 +59,12 @@ def fail_and_move(message, obj, session):
     session.data_objects.move(obj.path, "/iplant/home/shared/phantom_echoes/phantom_echoes_MEV1/validation_failed")
 
 
+singleton.SingleInstance()  # will sys.exit(-1) if other instance is running
+
 
 try:
     if ("fix_me" in auth.password):
-        logger.error("you didn't update the password in auth.py")
+        logger.debug("you didn't update the password in auth.py")
         exit(1)
     # Setup rotating logfile with 3 rotations, each with a maximum filesize of 1MB:
     logzero.logfile("verssa-validation.log", maxBytes=1e6, backupCount=3)
@@ -68,18 +72,19 @@ try:
     
 except Exception as e:
     logger.exception(e)
-    logger.error("could not setup so we are exiting")
+    logger.debug("could not setup so we are exiting")
     exit(-1)
 
 
-#   We don't want multiple of this program running at once
-prog_lock_acq('singleton.lock')
-
 logger.debug("Starting program")
+
+time_check()
 
 with iRODSSession(host='data.cyverse.org', port=1247, user=auth.username, password=auth.password, zone='iplant') as session:
     coll = session.collections.get("/iplant/home/shared/phantom_echoes/phantom_echoes_MEV1")
     for col in coll.subcollections:
+
+        time_check()
 
         #   skip validation failed folder
         if ("validation_failed" in str(col)):
@@ -91,7 +96,8 @@ with iRODSSession(host='data.cyverse.org', port=1247, user=auth.username, passwo
         # continue
 
         for obj in col.data_objects:
-
+            
+            # If the object already has meta_data
             vkeys = obj.metadata.get_all('validated')
             if (len(vkeys) >= 1):
                 continue
@@ -106,34 +112,34 @@ with iRODSSession(host='data.cyverse.org', port=1247, user=auth.username, passwo
             if (not valid_file):
                 continue
                 
-            piece_size = 26214400 # 4 KiB
+            piece_size = 26214400  # 4 KiB
             m_chk = False
             with open("tmpvalid.fit", "wb") as new_file:
                 with obj.open('r') as cache:
-                    t_end = time.time() + 60 * 4
+                    t_end = time.time() + (60 * 4)
                     while time.time() < t_end:
+                        time_check()
                         piece = cache.read(piece_size)
 
                         if piece == "":
                             m_chk = True
-                            break # end of file
+                            break  # end of file
 
                         if not piece:
                             m_chk = True
                             break
                         
                         new_file.write(piece)
-            
 
             if (not m_chk):
-                logger.error("execution took too long exiting")
+                logger.debug("execution took too long exiting")
                 exit(-1)
 
             filename = obj.name
             tmp_filename = "tmpvalid.fit"
             hdul = fits.open(tmp_filename)
 
-            if (len(hdul) < 0 ):
+            if (len(hdul) < 0):
                 fail_and_move("ERROR: no header info?", obj, session)
                 continue
             hdr = hdul[0].header  # the primary HDU header
@@ -203,7 +209,6 @@ with iRODSSession(host='data.cyverse.org', port=1247, user=auth.username, passwo
                 fail_and_move("Error COUNTRY bad match", obj, session)
                 continue
 
-
             # Finally validate the meta-data
             obj.metadata.add('validated', 'true')
             obj.metadata.add('COUNTRY', str(hdr['COUNTRY']))
@@ -216,6 +221,8 @@ with iRODSSession(host='data.cyverse.org', port=1247, user=auth.username, passwo
             obj.metadata.add('EXPTIME', str(hdr['EXPTIME']))
             obj.metadata.add('DATE-OBS', str(hdr['DATE-OBS']))
 
+
+# This function executes and then exits if there are no errors
 send_error_email()
     
 
